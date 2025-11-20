@@ -32,7 +32,8 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
      - Groq LLM (llama-3.3-70b-versatile) for intelligent processing
    
    - **External Services**:
-     - Firecrawl API for web page scraping
+   - Firecrawl API for web page scraping
+   - SMTP (configurable via environment) for email notifications
    
    - **UI Framework**:
      - Rich CLI for beautiful terminal interface
@@ -63,8 +64,10 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
 3. Output Generation:
    - Interactive CLI displays
    - Structured JSON data exports
+   - Persistent local data folder (`data/`)
    - Progress indicators and status updates
    - Color-coded notifications and warnings
+   - Email notifications (optional) with background scheduler
 
 ## Limitations and Future Work
 
@@ -73,40 +76,36 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
 1. **Input Constraints**
    - Manual syllabus text entry required
    - Limited web scraping capabilities
-   - No direct calendar integration
    - Fixed study hour estimations
 
 2. **Technical Constraints**
    - Groq API dependency
    - No offline mode support
-   - Limited data persistence
    - Basic error handling
 
 3. **Feature Limitations**
    - No collaborative features
    - Static notification rules
    - Limited customization options
-   - No progress tracking
+   - 
 
 ### Future Work
 
 1. **Enhanced Capabilities**
-   - PDF syllabus parsing
-   - Calendar integration (Google, iCal)
+   - Calendar integration via APIs (Google)
    - Dynamic study hour estimation
-   - Progress tracking and analytics
+   - Advanced analytics
 
 2. **Technical Improvements**
    - Multi-LLM provider support
-   - Local data persistence
    - Offline mode operation
    - Enhanced error handling
 
 3. **Feature Expansions**
    - Collaborative study groups
    - Custom notification rules
-   - Mobile companion app
-   - Learning style adaptation
+  - Mobile companion app
+  - Learning style adaptation
 
 ## Getting Started
 
@@ -136,12 +135,24 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
    ```env
    GROQ_API_KEY=your_groq_api_key_here
    FIRECRAWL_API_KEY=your_firecrawl_api_key_here  # Optional
+   # SMTP settings for email notifications (optional)
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your_email@example.com
+   SMTP_PASS=your_email_app_password
    ```
 
 4. **Running the Application**
    ```bash
    python main.py
    ```
+
+5. **Data Persistence**
+   - The application creates a local `data/` folder automatically.
+   - Settings are stored in `data/settings.json`.
+   - Current state (courses and assignments) is stored in `data/data.json` and updated after actions.
+   - Manual saves create timestamped snapshots under `data/`.
+   - Calendar exports default to `data/coursesync_calendar.ics`.
 
 ## Usage
 
@@ -163,6 +174,15 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
    - Receive strategic reminders
    - Get early warnings for heavy workloads
    - Celebrate assignment completions
+   - Optional email delivery: enable in Settings and set destination email
+   - Requires SMTP credentials in `.env`
+   - Background scheduler can be enabled in Settings; notifications are sent at their `send_at` time
+
+5. **Settings**
+   - Configure daily study hours, risk threshold, notification lead days
+   - Toggle email notifications and set recipient email
+   - Toggle background scheduler and set poll interval seconds
+   - Configure calendar export filename
 
 ## Contributing
 

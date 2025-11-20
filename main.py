@@ -1,7 +1,7 @@
 """Thin entrypoint wrapper that delegates to the cleaned package implementation.
 
 This file is intentionally small: the real implementation lives in
-`coursesync-agent/coursesync_agent/` to keep modules focused and testable.
+`coursesync-agent/agent/` to keep modules focused and testable.
 """
 
 try:
