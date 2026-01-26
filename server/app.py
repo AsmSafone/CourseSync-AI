@@ -12,8 +12,8 @@ import threading
 import time
 from datetime import datetime
 
-from agent.agent import CourseSyncAgent
-from agent.utils import (
+from .agent.agent import CourseSyncAgent
+from .agent.utils import (
     get_data_dir, load_settings, save_settings, load_state,
     send_email, notification_id, extract_text_from_pdf, create_ics_for_assignments
 )
@@ -107,14 +107,7 @@ class SettingsUpdate(BaseModel):
     notification_poll_seconds: Optional[int] = None
 
 # API Routes
-@app.get("/", response_class=HTMLResponse)
-async def read_root():
-    """Serve the main HTML page"""
-    html_path = os.path.join(os.path.dirname(__file__), "webui", "index.html")
-    if os.path.exists(html_path):
-        with open(html_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>Web UI files not found. Please ensure the webui directory exists.</h1>")
+
 
 @app.get("/api/state")
 async def get_state():
@@ -310,10 +303,38 @@ async def delete_course(course_index: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Serve static files
-static_dir = os.path.join(os.path.dirname(__file__), "webui")
+# Static file serving for React build
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+
 if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    # Mount assets
+    assets_dir = os.path.join(static_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    # Serve index.html on root
+    @app.get("/")
+    async def read_root():
+        return FileResponse(os.path.join(static_dir, "index.html"))
+
+    # Catch-all for SPA client-side routing
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Don't intercept API calls (though they should be handled above)
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+            
+        # Check if acts file exists (like vite.svg)
+        potential_path = os.path.join(static_dir, full_path)
+        if os.path.isfile(potential_path):
+            return FileResponse(potential_path)
+            
+        # Default to index.html
+        return FileResponse(os.path.join(static_dir, "index.html"))
+else:
+    @app.get("/")
+    async def read_root():
+        return JSONResponse({"message": "Frontend not found. Please run 'npm run build' in client directory."})
 
 if __name__ == "__main__":
     import uvicorn

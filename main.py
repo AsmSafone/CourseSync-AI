@@ -14,14 +14,14 @@ except Exception:
     # If python-dotenv isn't installed, continue silently; environment vars may still be set externally.
     pass
 
-from agent.utils import console
+from server.app import app
+from server.agent.utils import console
 
 
 if __name__ == "__main__":
     # Run web UI
     try:
         import uvicorn
-        from webui import app
         console.print("\n[bold cyan]🚀 Starting CourseSync Web UI...[/bold cyan]")
         console.print("[green]📱 Open your browser to: http://localhost:8000[/green]\n")
         uvicorn.run(app, host="0.0.0.0", port=8000)
