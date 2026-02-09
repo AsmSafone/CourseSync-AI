@@ -1,19 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles, Brain, MessageSquare, Trash2, ArrowRight } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Brain, MessageSquare, Trash2, ArrowRight, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { chatWithAI } from '../services/api';
+import { chatWithAI, addSyllabusFile } from '../services/api';
 import { cn } from '@/lib/utils';
 
 const AIAssistant = () => {
     const [messages, setMessages] = useState([
-        { id: 1, role: 'assistant', content: "Hello! I'm your CourseSync AI assistant. Ask me anything about your courses, assignments, or study schedule!" }
+        { id: 1, role: 'assistant', content: "Hello! I'm your CourseSync AI assistant. Ask me anything about your courses, assignments, or study schedule! You can also upload a syllabus (PDF, TXT, MD) or paste a link to add a course." }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -42,6 +43,41 @@ const AIAssistant = () => {
             setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: "An error occurred. Make sure the server is running." }]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleFileSelect = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const tempId = Date.now();
+        setMessages(prev => [...prev, { id: tempId, role: 'user', content: `Uploading ${file.name}...` }]);
+        setLoading(true);
+
+        try {
+            // Use API service
+            const res = await addSyllabusFile(file, '2025-09-01');
+
+            setMessages(prev => prev.filter(m => m.id !== tempId)); // remove loading msg
+
+            if (res.data.success) {
+                setMessages(prev => [...prev,
+                { id: Date.now(), role: 'user', content: `Uploaded ${file.name}` },
+                { id: Date.now() + 1, role: 'assistant', content: `✅ Successfully processed ${file.name} and added the course: ${res.data.course.course_name}` }
+                ]);
+            } else {
+                setMessages(prev => [...prev,
+                { id: Date.now(), role: 'user', content: `Uploaded ${file.name}` },
+                { id: Date.now() + 1, role: 'assistant', content: `Failed to process file: ${res.data.error}` }
+                ]);
+            }
+        } catch (error) {
+            console.error(error);
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+            setMessages(prev => [...prev, { id: Date.now(), role: 'assistant', content: `Error uploading file: ${error.message}` }]);
+        } finally {
+            setLoading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -150,8 +186,25 @@ const AIAssistant = () => {
                         </div>
                     )}
                     <form onSubmit={handleSend} className="relative flex gap-2">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileSelect}
+                            accept=".pdf,.txt,.md"
+                        />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-slate-500 hover:text-blue-600"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={loading}
+                        >
+                            <Paperclip size={20} />
+                        </Button>
                         <Input
-                            placeholder="Ask about your courses..."
+                            placeholder="Ask about courses, upload syllabus, or paste a link..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             disabled={loading}

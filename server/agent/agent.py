@@ -100,7 +100,7 @@ Extract all assignments in JSON format."""
         result = extract_json(response)
         return result if isinstance(result, list) else result.get("notifications", [])
 
-    def chat(self, question: str, courses: List[Dict], assignments: List[Dict]) -> str:
+    def chat(self, question: str, courses: List[Dict], assignments: List[Dict]) -> Dict:
         """Answer student questions about their courses"""
         user_prompt = f"""Student Question: {question}
 
@@ -114,4 +114,13 @@ Extract all assignments in JSON format."""
             progress.add_task("🤖 Thinking...", total=None)
             response = self.groq.call(AI_ASSISTANT_PROMPT, user_prompt, temperature=0.7)
 
-        return response
+        # Try to parse as JSON action
+        try:
+            parsed = extract_json(response)
+            if parsed and "action" in parsed:
+                return parsed
+        except:
+            pass
+            
+        # Fallback to chat
+        return {"action": "chat", "content": response}

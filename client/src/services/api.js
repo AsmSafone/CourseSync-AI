@@ -31,13 +31,18 @@ export const addSyllabusText = (syllabus_text, semester_start) =>
 export const addSyllabusUrl = (url, semester_start) =>
     api.post('/api/syllabus/url', { url, semester_start });
 
-export const addSyllabusPdf = (file, semester_start) => {
+export const addSyllabusFile = (file, semester_start) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post(`/api/syllabus/pdf?semester_start=${semester_start}`, formData, {
+    return api.post(`/api/syllabus/file?semester_start=${semester_start}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     });
 };
+
+export const addCourseManual = (courseData) => api.post('/api/course/manual', courseData);
+
+export const addAssignment = (courseName, assignmentData) =>
+    api.post('/api/assignments', { course_name: courseName, assignment: assignmentData });
 
 export const getSettings = () => api.get('/api/settings');
 export const updateSettings = (settings) => api.post('/api/settings', settings);

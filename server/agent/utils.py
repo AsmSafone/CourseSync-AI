@@ -42,9 +42,27 @@ def extract_json(text: str) -> Dict:
         console.print(f"[dim]Raw response:\n{text}[/dim]")
         return {}
 
-def extract_text_from_pdf(path: str) -> str:
-    from pdfminer.high_level import extract_text
-    return extract_text(path)
+def extract_text_from_file(path: str, original_filename: str = "") -> str:
+    """Extract text from various file formats."""
+    ext = os.path.splitext(original_filename)[1].lower() if original_filename else ""
+    
+    try:
+        if ext == ".pdf":
+            from pdfminer.high_level import extract_text
+            return extract_text(path)
+        elif ext in [".txt", ".md", ".csv", ".json", ".py", ".js", ".html", ".css"]:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read()
+        else:
+            # Fallback for unknown text-like files, try reading as text
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                    return f.read()
+            except:
+                return ""
+    except Exception as e:
+        console.print(f"[red]Error extracting text from {original_filename}: {e}[/red]")
+        return ""
 
 def create_ics_for_assignments(assignments: List[Dict], filename: str) -> None:
     lines = [

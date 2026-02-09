@@ -15,8 +15,18 @@ from datetime import datetime
 from .agent.agent import CourseSyncAgent
 from .agent.utils import (
     get_data_dir, load_settings, save_settings, load_state,
-    send_email, notification_id, extract_text_from_pdf, create_ics_for_assignments
+    send_email, notification_id, extract_text_from_file, create_ics_for_assignments
 )
+
+import logging
+
+# Configure logging
+logging.basicConfig(
+    filename='server_debug.log',
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="CourseSync-Agent Web UI")
 
@@ -106,17 +116,155 @@ class SettingsUpdate(BaseModel):
     email_schedule_enabled: Optional[bool] = None
     notification_poll_seconds: Optional[int] = None
 
+class AssignmentModel(BaseModel):
+    name: str
+    type: str = "homework"
+    due_date: str
+    weight: float = 0
+    estimated_hours: float = 1
+    description: Optional[str] = ""
+
+class ManualCourseRequest(BaseModel):
+    course_name: str
+    course_code: str
+    semester_start: str = "2025-09-01"
+    assignments: List[AssignmentModel]
+
 class ChatRequest(BaseModel):
     question: str
+
+class AddAssignmentRequest(BaseModel):
+    course_name: str
+    assignment: AssignmentModel
 
 # API Routes
 @app.post("/api/chat")
 async def chat_with_assistant(request: ChatRequest):
     """Chat with the academic assistant"""
     try:
-        response = agent.chat(request.question, state.courses, state.all_assignments)
-        return {"success": True, "response": response}
+        logger.info(f"Chat request: {request.question}")
+        result = agent.chat(request.question, state.courses, state.all_assignments)
+        logger.info(f"Agent response: {result}")
+        
+        # Helper to format response
+        def format_response(msg):
+             return {"success": True, "response": msg}
+
+        if isinstance(result, dict) and "action" in result:
+            action = result["action"]
+            content = result.get("content", "")
+            data = result.get("data", {})
+            logger.info(f"Action detected: {action}")
+            
+            if action == "add_course":
+                syllabus_text = data.get("syllabus_text", "")
+                if not syllabus_text:
+                     # Check if course_name is provided instead (for simple "add course" commands)
+                     course_name = data.get("course_name", "")
+                     if course_name:
+                         syllabus_text = course_name
+                     else:
+                         logger.warning("Add course action but no syllabus text or course name")
+                         return format_response(f"{content}\n(No syllabus text found to process)")
+
+                try:
+                    # Check if URL
+                    if syllabus_text.startswith("http"):
+                        logger.info(f"Scraping URL: {syllabus_text}")
+                        scraped = agent.scrape_course_page(syllabus_text)
+                        if not scraped:
+                             logger.error("Scraping failed")
+                             return format_response(f"{content}\n(Failed to scrape the URL provided)")
+                        course_data = agent.parse_syllabus(scraped, "2025-09-01") # Default date
+                    else:
+                        logger.info(f"Parsing syllabus text: {syllabus_text}")
+                        # For simple commands like "Add Math 101", parse_syllabus handles the string intelligently
+                        course_data = agent.parse_syllabus(syllabus_text, "2025-09-01")
+                    
+                    logger.info(f"Parsed course data: {course_data}")
+                    if course_data:
+                        # Ensure 'assignments' key exists
+                        if "assignments" not in course_data:
+                             course_data["assignments"] = []
+                        
+                        for a in course_data["assignments"]:
+                            a["course"] = course_data.get("course_name", "N/A")
+                            a["course_code"] = course_data.get("course_code", "")
+                            a["progress"] = 0
+                        state.courses.append(course_data)
+                        state.all_assignments.extend(course_data["assignments"])
+                        state.persist()
+                        logger.info("Course persisted (chat action)")
+                        return format_response(f"{content}\n\n✅ Automatically added course: {course_data.get('course_name')}")
+                    else:
+                        logger.error("Failed to parse course details")
+                        return format_response(f"{content}\n(Failed to extract course details)")
+                except Exception as e:
+                     logger.exception("Error processing add_course action")
+                     return format_response(f"{content}\n(Error adding course: {str(e)})")
+
+            elif action == "add_assignment":
+                course_target = data.get("course_name", "")
+                assignment_data = data.get("assignment", {})
+                
+                if not course_target or not assignment_data:
+                    return format_response(f"{content}\n(Missing course name or assignment details)")
+
+                target_lower = course_target.lower()
+                found_course = None
+                for course in state.courses:
+                    if target_lower in course.get("course_name", "").lower() or target_lower in course.get("course_code", "").lower():
+                        found_course = course
+                        break
+                
+                if found_course:
+                    new_assignment = {
+                        "name": assignment_data.get("name", "New Assignment"),
+                        "type": assignment_data.get("type", "homework"),
+                        "due_date": assignment_data.get("due_date", datetime.now().strftime("%Y-%m-%d")),
+                        "weight": assignment_data.get("weight", 0),
+                        "estimated_hours": assignment_data.get("estimated_hours", 1),
+                        "description": assignment_data.get("description", ""),
+                        "course": found_course.get("course_name", ""),
+                        "course_code": found_course.get("course_code", ""),
+                        "progress": 0
+                    }
+                    found_course.setdefault("assignments", []).append(new_assignment)
+                    state.all_assignments.append(new_assignment)
+                    state.persist()
+                    return format_response(f"{content}\n\n✅ Added assignment '{new_assignment['name']}' to {found_course['course_name']}")
+                else:
+                    return format_response(f"{content}\n(Course '{course_target}' not found)")
+
+            elif action == "delete_course":
+                target = data.get("course_name", "").lower()
+                logger.info(f"Deleting course target: {target}")
+                if not target:
+                    return format_response(f"{content}\n(No course name specified)")
+
+                for i, c in enumerate(state.courses):
+                    if target in c.get("course_name", "").lower() or target in c.get("course_code", "").lower():
+                         course = state.courses.pop(i)
+                         # remove assignments
+                         state.all_assignments = [a for a in state.all_assignments if a.get("course") != course.get("course_name")]
+                         state.persist()
+                         logger.info(f"Deleted course {course.get('course_name')}")
+                         return format_response(f"{content}\n\n🗑️ Deleted course: {course.get('course_name')}")
+                
+                logger.warning(f"Course not found: {target}")
+                return format_response(f"{content}\n(Could not find course '{target}' to delete)")
+
+            elif action == "edit_course":
+                 return format_response(f"{content}\n(Editing courses via chat is not fully supported yet. Please delete and re-add.)")
+            
+            else:
+                 return format_response(content)
+        
+        # Fallback
+        return format_response(str(result))
+
     except Exception as e:
+        logger.exception("Chat endpoint error")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -208,25 +356,32 @@ async def add_syllabus_url(request: URLRequest):
             raise HTTPException(status_code=503, detail="LLM service unavailable or rate limited. Try again later.")
         raise HTTPException(status_code=500, detail=msg)
 
-@app.post("/api/syllabus/pdf")
-async def add_syllabus_pdf(file: UploadFile = File(...), semester_start: str = "2025-09-01"):
-    """Add syllabus from PDF"""
+@app.post("/api/syllabus/file")
+async def add_syllabus_file(file: UploadFile = File(...), semester_start: str = "2025-09-01"):
+    """Add syllabus from any text-based file (PDF, TXT, MD, etc.)"""
     try:
+        logger.info(f"Received file upload: {file.filename}")
         # Save uploaded file temporarily
         temp_path = os.path.join(data_dir, f"temp_{file.filename}")
         with open(temp_path, "wb") as f:
             content = await file.read()
             f.write(content)
         
-        # Extract text
-        text = extract_text_from_pdf(temp_path)
+        # Extract text using updated helper
+        text = extract_text_from_file(temp_path, file.filename)
         os.remove(temp_path)  # Clean up
         
+        logger.info(f"Extracted {len(text)} chars from file.")
+        if len(text) < 50:
+            logger.warning(f"Extracted text too short: {text}")
+
         if not text.strip():
-            return {"success": False, "error": "No content extracted from PDF"}
+            logger.error("No content extracted from file.")
+            return {"success": False, "error": "No content extracted from file. Only text-based files (PDF, TXT, MD, etc.) are supported."}
         
         course_data = agent.parse_syllabus(text, semester_start)
-        
+        logger.info(f"Parsed course data: {course_data}")
+
         if course_data and "assignments" in course_data:
             for a in course_data["assignments"]:
                 a["course"] = course_data.get("course_name", "N/A")
@@ -235,15 +390,50 @@ async def add_syllabus_pdf(file: UploadFile = File(...), semester_start: str = "
             state.courses.append(course_data)
             state.all_assignments.extend(course_data["assignments"])
             state.persist()
+            logger.info("Course persisted successfully.")
             return {"success": True, "course": course_data}
         else:
-            return {"success": False, "error": "Failed to parse syllabus from PDF"}
+            logger.error("Failed to parse syllabus: Missing 'assignments' key or empty result.")
+            return {"success": False, "error": "Failed to parse syllabus from file"}
     except Exception as e:
+        logger.exception("Error in add_syllabus_file:")
         msg = str(e)
         lower = msg.lower()
         if "rate limit" in lower or "rate limited" in lower or "groq api unavailable" in lower or "groq" in lower:
             raise HTTPException(status_code=503, detail="LLM service unavailable or rate limited. Try again later.")
         raise HTTPException(status_code=500, detail=msg)
+
+@app.post("/api/course/manual")
+async def add_course_manual(request: ManualCourseRequest):
+    """Add a course manually (bypassing AI parsing)"""
+    try:
+        assignments = []
+        for a in request.assignments:
+             assignments.append({
+                 "name": a.name,
+                 "type": a.type,
+                 "due_date": a.due_date,
+                 "weight": a.weight,
+                 "estimated_hours": a.estimated_hours,
+                 "description": a.description if a.description else "",
+                 "course": request.course_name,
+                 "course_code": request.course_code,
+                 "progress": 0
+             })
+        
+        course_data = {
+            "course_name": request.course_name,
+            "course_code": request.course_code,
+            "assignments": assignments
+        }
+        
+        state.courses.append(course_data)
+        state.all_assignments.extend(assignments)
+        state.persist()
+        return {"success": True, "course": course_data}
+    except Exception as e:
+        logger.exception("Error adding course manually")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/workload")
 async def get_workload():
@@ -333,6 +523,53 @@ async def get_notifications():
         
         return {"success": True, "notifications": notifications}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/assignments")
+async def add_assignment(request: AddAssignmentRequest):
+    """Add an assignment to an existing course"""
+    try:
+        target_course = None
+        target_lower = request.course_name.lower()
+        
+        # Find course
+        for course in state.courses:
+            if course.get("course_name", "").lower() == target_lower or course.get("course_code", "").lower() == target_lower:
+                target_course = course
+                break
+        
+        if not target_course:
+            # Try partial match if exact match fails
+            for course in state.courses:
+                if target_lower in course.get("course_name", "").lower():
+                    target_course = course
+                    break
+        
+        if not target_course:
+            return {"success": False, "error": f"Course '{request.course_name}' not found"}
+
+        # process assignment
+        a = request.assignment
+        new_assignment = {
+            "name": a.name,
+            "type": a.type,
+            "due_date": a.due_date,
+            "weight": a.weight,
+            "estimated_hours": a.estimated_hours,
+            "description": a.description,
+            "course": target_course.get("course_name"),
+            "course_code": target_course.get("course_code"),
+            "progress": 0
+        }
+        
+        target_course.setdefault("assignments", []).append(new_assignment)
+        state.all_assignments.append(new_assignment)
+        state.persist()
+        
+        return {"success": True, "assignment": new_assignment}
+
+    except Exception as e:
+        logger.exception("Error adding assignment")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/progress")

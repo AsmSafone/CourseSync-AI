@@ -1,171 +1,35 @@
-COURSE SYLLABUS
-===============
+Course: Introduction to Artificial Intelligence (CS101)
+Instructor: Dr. Alan Turing
+Semester: Fall 2025
 
-COURSE INFORMATION
-Course Code: CS101
-Course Title: Introduction to Computer Science
-Instructor: Dr. Sarah Johnson
-Email: s.johnson@university.edu
-Office: Computer Science Building, Room 305
-Office Hours: Monday & Wednesday 2:00 PM - 4:00 PM
-Class Meetings: Tuesday & Thursday 10:00 AM - 11:30 AM
-Location: Engineering Hall 201
+Course Description:
+This course introduces the basic principles and applications of Artificial Intelligence. Topics include search algorithms, logic, machine learning, and ethics in AI.
 
-COURSE DESCRIPTION
-This course introduces fundamental concepts in computer science including problem-solving, algorithms, data structures, and programming. Students will learn to write programs, understand computational thinking, and apply CS principles to real-world problems.
+Assignments and Grading:
 
-COURSE OBJECTIVES
-By the end of this course, students will be able to:
-- Understand fundamental programming concepts and paradigms
-- Write well-structured programs in Python
-- Analyze and implement basic data structures
-- Solve computational problems using algorithms
-- Debug and test code effectively
-- Apply computer science principles to practical scenarios
+1. Homework 1: Search Algorithms
+   - Due Date: 2025-09-15
+   - Weight: 10%
+   - Description: Implement BFS and DFS search algorithms in Python.
 
-PREREQUISITES
-High school algebra or equivalent. No prior programming experience required.
+2. Quiz 1: Logic and knowledge Representation
+   - Due Date: 2025-09-25
+   - Weight: 5%
+   - Description: Multiple choice quiz on propositional and first-order logic.
 
-TEXTBOOKS AND MATERIALS
-- Required: "Introduction to Computer Science" by John Guttag (3rd Edition)
-- Required: Python 3.9+ (Free, open-source)
-- Recommended: "Cracking the Coding Interview" by Gayle Laakmann McDowell
+3. Midterm Exam
+   - Due Date: 2025-10-20
+   - Weight: 25%
+   - Description: Comprehensive exam covering the first half of the course.
 
-GRADING BREAKDOWN
-- Participation & Attendance: 10%
-- Weekly Quizzes: 15%
-- Programming Assignments (5 assignments): 35%
-- Midterm Project: 15%
-- Final Exam: 25%
+4. Project: Chatbot Implementation
+   - Due Date: 2025-11-15
+   - Weight: 30%
+   - Description: Build a simple chatbot using NLP techniques.
 
-GRADE SCALE
-A: 90-100
-B: 80-89
-C: 70-79
-D: 60-69
-F: Below 60
+5. Final Exam
+   - Due Date: 2025-12-10
+   - Weight: 30%
+   - Description: Final cumulative examination.
 
-COURSE REQUIREMENTS AND ASSIGNMENTS
-
-Assignment 1: Variables and Data Types
-Due Date: September 15, 2025
-Weight: 5%
-Description: Write Python programs to practice variables, data types, and basic operations
-
-Assignment 2: Control Flow and Functions
-Due Date: September 29, 2025
-Weight: 5%
-Description: Implement programs using if-else statements, loops, and functions
-
-Assignment 3: Lists and Dictionaries
-Due Date: October 13, 2025
-Weight: 5%
-Description: Work with collections and data structures in Python
-
-Assignment 4: File Handling and Exceptions
-Due Date: October 27, 2025
-Weight: 5%
-Description: Read/write files, handle errors, and implement exception handling
-
-Assignment 5: Final Project
-Due Date: November 30, 2025
-Weight: 5%
-Description: Complete a comprehensive project combining all course concepts
-
-Quiz 1: Fundamentals
-Due Date: September 8, 2025
-Duration: 30 minutes
-
-Quiz 2: Functions and Scope
-Due Date: September 22, 2025
-Duration: 30 minutes
-
-Quiz 3: Data Structures
-Due Date: October 6, 2025
-Duration: 30 minutes
-
-Quiz 4: Advanced Concepts
-Due Date: October 20, 2025
-Duration: 30 minutes
-
-Quiz 5: Cumulative Review
-Due Date: November 3, 2025
-Duration: 45 minutes
-
-Midterm Project: Game Development
-Due Date: October 31, 2025
-Description: Develop a simple game in Python using concepts learned so far
-
-Final Exam
-Due Date: December 15, 2025
-Duration: 2 hours
-Format: Written exam covering all course material
-
-COURSE POLICIES
-
-Attendance Policy
-- Attendance is mandatory and will be taken at every class
-- More than 3 unexcused absences will result in grade penalty
-- If you must miss class, notify instructor in advance
-
-Late Work Policy
-- Assignments submitted 1-3 days late: 10% penalty
-- Assignments submitted 4-7 days late: 20% penalty
-- No assignments accepted more than 1 week late
-
-Academic Integrity
-- All work must be original and properly cited
-- Plagiarism and cheating will result in failure and disciplinary action
-- Refer to university academic integrity policy
-
-Classroom Conduct
-- Be respectful to instructor and classmates
-- Turn off cell phones or use silent mode
-- No eating or drinking in the classroom except water
-
-ACCOMMODATIONS FOR STUDENTS WITH DISABILITIES
-Students with documented disabilities should contact the Office of Disability Services. Appropriate accommodations will be made for all qualifying students.
-
-COURSE SCHEDULE
-
-Week 1-2: Introduction to Programming and Python Basics
-Week 3-4: Variables, Data Types, and Operations
-Week 5-6: Control Flow (If-Else, Loops)
-Week 7-8: Functions and Scope
-Midterm Project Week (Week 9)
-Week 10-11: Lists and Collections
-Week 12-13: Dictionaries and Sets
-Week 14-15: File Handling and Exceptions
-Week 16: Advanced Topics and Review
-Finals Week: Final Exam
-
-LEARNING RESOURCES
-- Course website with lecture notes and code examples
-- Python documentation: https://docs.python.org
-- Stack Overflow for programming questions
-- Office hours for personalized help
-- Peer study groups (optional)
-
-TECHNOLOGY REQUIREMENTS
-- A computer with Python 3.9+ installed
-- A code editor (VS Code, PyCharm, or similar)
-- Internet connection for accessing course materials
-- Email access for course communications
-
-COMMUNICATION
-- Course announcements will be made via email and course website
-- Questions can be posted on the discussion board
-- Response time: 24-48 hours for emails
-- Office hours: In-person or by appointment
-
-SPECIAL NOTES
-- This is an introductory course suitable for beginners
-- Consistent effort and practice are essential for success
-- Don't hesitate to ask questions or seek help
-- Programming skills improve with practice
-
-SYLLABUS DISCLAIMER
-This syllabus is subject to change at the discretion of the instructor. Any changes will be announced in class and via email.
-
-Last Updated: August 15, 2025
-Academic Term: Fall 2025
+Please submit all assignments via the course portal by 11:59 PM on the due date.

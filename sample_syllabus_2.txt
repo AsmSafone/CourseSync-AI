@@ -1,0 +1,38 @@
+Course: Introduction to Data Science (DS200)
+Instructor: Prof. Ada Lovelace
+Semester: Fall 2025
+
+Course Overview:
+Learn the fundamentals of data analysis, visualization, and statistical modeling using Python and R.
+
+Grading & Assessments:
+
+1. Lab 1: Data Cleaning with Pandas
+   - Due Date: 2025-09-10
+   - Weight: 10%
+   - Description: Clean a messy dataset of housing prices.
+
+2. Project Proposal
+   - Due Date: 2025-09-22
+   - Weight: 5%
+   - Description: Submit a 1-page proposal for your final data analysis project.
+
+3. Midterm Exam
+   - Due Date: 2025-10-15
+   - Weight: 25%
+   - Description: Written exam on probability, statistics, and basic coding concepts.
+
+4. Lab 2: Visualization with Matplotlib/Seaborn
+   - Due Date: 2025-11-05
+   - Weight: 15%
+   - Description: Create 5 distinct visualizations to tell a story about the provided dataset.
+
+5. Final Project Presentation
+   - Due Date: 2025-12-05
+   - Weight: 20%
+   - Description: Present your findings to the class (10 mins).
+
+6. Final Project Report
+   - Due Date: 2025-12-12
+   - Weight: 25%
+   - Description: Comprehensive report detailing methodology and results.

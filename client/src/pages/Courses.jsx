@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getState, addSyllabusText, addSyllabusUrl, addSyllabusPdf, deleteCourse } from '../services/api';
-import { Trash2, Plus, FileText, Link as LinkIcon, Upload, Loader, BookOpen, CheckCircle, Clock, Users, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
+import { getState, addSyllabusText, addSyllabusUrl, addSyllabusFile, deleteCourse, addCourseManual, addAssignment } from '../services/api';
+import { Trash2, Plus, FileText, Link as LinkIcon, Upload, Loader, BookOpen, CheckCircle, Clock, Users, ArrowLeft, Calendar as CalendarIcon, Keyboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,19 @@ const Courses = () => {
     const [textInput, setTextInput] = useState('');
     const [urlInput, setUrlInput] = useState('');
     const [fileInput, setFileInput] = useState(null);
+    const [manualName, setManualName] = useState('');
+    const [manualCode, setManualCode] = useState('');
+    const [manualAssignments, setManualAssignments] = useState([]);
+
+    // Add Assignment State
+    const [isAddingAssignment, setIsAddingAssignment] = useState(false);
+    const [newAssignment, setNewAssignment] = useState({
+        name: '',
+        type: 'homework',
+        due_date: '',
+        estimated_hours: 1,
+        description: ''
+    });
 
     useEffect(() => {
         loadCourses();
@@ -30,14 +43,58 @@ const Courses = () => {
     useEffect(() => {
         if (location.state?.selectedCourse) {
             setSelectedCourse(location.state.selectedCourse);
-            // Optional: clear state to prevent reopening on generic back navigation if desired
-            // history.replaceState({}, document.title) // simplified
         }
     }, [location]);
 
     const loadCourses = async () => {
         const data = await getState();
-        if (data) setCourses(data.courses);
+        if (data) {
+            setCourses(data.courses);
+            // Update selected course if it exists to show new data
+            if (selectedCourse) {
+                const updated = data.courses.find(c => c.course_name === selectedCourse.course_name);
+                if (updated) setSelectedCourse(updated);
+            }
+        }
+    };
+
+    const handleAddSingleAssignment = async (e) => {
+        e.preventDefault();
+        if (!selectedCourse) return;
+
+        try {
+            const res = await addAssignment(selectedCourse.course_name, newAssignment);
+            if (res.data && res.data.success) {
+                setNewAssignment({
+                    name: '',
+                    type: 'homework',
+                    due_date: '',
+                    estimated_hours: 1,
+                    description: ''
+                });
+                setIsAddingAssignment(false);
+                await loadCourses();
+            } else {
+                alert('Failed to add assignment: ' + (res?.data?.error || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error adding assignment');
+        }
+    };
+
+    const addManualAssignment = () => {
+        setManualAssignments([...manualAssignments, { name: '', type: 'homework', due_date: '', weight: 0, estimated_hours: 1, description: '' }]);
+    };
+
+    const updateManualAssignment = (index, field, value) => {
+        const updated = [...manualAssignments];
+        updated[index][field] = value;
+        setManualAssignments(updated);
+    };
+
+    const removeManualAssignment = (index) => {
+        setManualAssignments(manualAssignments.filter((_, i) => i !== index));
     };
 
     const handleAddCourse = async (e) => {
@@ -51,7 +108,15 @@ const Courses = () => {
                 res = await addSyllabusUrl(urlInput, semesterStart);
             } else if (activeTab === 'pdf') {
                 if (!fileInput) { alert("Please select a file"); setLoading(false); return; }
-                res = await addSyllabusPdf(fileInput, semesterStart);
+                res = await addSyllabusFile(fileInput, semesterStart);
+            } else if (activeTab === 'manual') {
+                if (!manualName || !manualCode) { alert("Please enter course name and code"); setLoading(false); return; }
+                res = await addCourseManual({
+                    course_name: manualName,
+                    course_code: manualCode,
+                    semester_start: semesterStart,
+                    assignments: manualAssignments
+                });
             }
 
             if (res && res.data && res.data.success) {
@@ -59,6 +124,10 @@ const Courses = () => {
                 setTextInput('');
                 setUrlInput('');
                 setFileInput(null);
+
+                setManualName('');
+                setManualCode('');
+                setManualAssignments([]);
                 // Reload
                 await loadCourses();
             } else {
@@ -86,7 +155,8 @@ const Courses = () => {
     const tabs = [
         { id: 'text', label: 'Paste Text', icon: FileText },
         { id: 'url', label: 'URL', icon: LinkIcon },
-        { id: 'pdf', label: 'Upload PDF', icon: Upload },
+        { id: 'pdf', label: 'Upload File', icon: Upload },
+        { id: 'manual', label: 'Manual Entry', icon: Keyboard },
     ];
 
     if (selectedCourse) {
@@ -147,10 +217,54 @@ const Courses = () => {
                         </div>
 
                         <Card className="border-0 shadow-md">
-                            <CardHeader>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                                 <CardTitle>Course Assignments</CardTitle>
+                                <Button size="sm" onClick={() => setIsAddingAssignment(!isAddingAssignment)}>
+                                    <Plus size={16} className="mr-2" /> Add Assignment
+                                </Button>
                             </CardHeader>
                             <CardContent>
+                                {isAddingAssignment && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        className="mb-6 p-4 border rounded-xl bg-slate-50 dark:bg-slate-800 space-y-4"
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <h4 className="font-semibold text-sm">New Assignment</h4>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsAddingAssignment(false)}>
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <Input
+                                                placeholder="Assignment Name"
+                                                value={newAssignment.name}
+                                                onChange={(e) => setNewAssignment({ ...newAssignment, name: e.target.value })}
+                                                className="bg-white dark:bg-slate-900"
+                                            />
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <Input
+                                                    type="date"
+                                                    value={newAssignment.due_date}
+                                                    onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })}
+                                                    className="bg-white dark:bg-slate-900"
+                                                />
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Est. Hours"
+                                                    value={newAssignment.estimated_hours}
+                                                    onChange={(e) => setNewAssignment({ ...newAssignment, estimated_hours: parseFloat(e.target.value) })}
+                                                    className="bg-white dark:bg-slate-900"
+                                                />
+                                            </div>
+                                            <div className="flex justify-end gap-2 pt-2">
+                                                <Button variant="outline" size="sm" onClick={() => setIsAddingAssignment(false)}>Cancel</Button>
+                                                <Button size="sm" onClick={handleAddSingleAssignment}>Save Assignment</Button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
                                 {(!selectedCourse.assignments || selectedCourse.assignments.length === 0) ? (
                                     <div className="text-center py-8 text-muted-foreground">
                                         No assignments found for this course.
@@ -348,11 +462,11 @@ const Courses = () => {
                                         animate={{ opacity: 1 }}
                                         className="space-y-2"
                                     >
-                                        <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Syllabus PDF</label>
+                                        <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Syllabus File</label>
                                         <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all cursor-pointer relative group">
                                             <input
                                                 type="file"
-                                                accept=".pdf"
+                                                accept=".pdf,.txt,.md"
                                                 onChange={(e) => setFileInput(e.target.files[0])}
                                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                 required={!fileInput}
@@ -364,7 +478,93 @@ const Courses = () => {
                                                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                                     {fileInput ? fileInput.name : "Click to upload"}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">PDF, up to 10MB</p>
+                                                <p className="text-xs text-muted-foreground">PDF, TXT, MD, up to 10MB</p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {activeTab === 'manual' && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="space-y-4"
+                                    >
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Course Name</label>
+                                                <Input
+                                                    placeholder="Intro to CS"
+                                                    value={manualName}
+                                                    onChange={(e) => setManualName(e.target.value)}
+                                                    required
+                                                    className="rounded-lg"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Course Code</label>
+                                                <Input
+                                                    placeholder="CS101"
+                                                    value={manualCode}
+                                                    onChange={(e) => setManualCode(e.target.value)}
+                                                    required
+                                                    className="rounded-lg"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Assignments</label>
+                                                <Button type="button" variant="outline" size="sm" onClick={addManualAssignment} className="h-7 text-xs">
+                                                    <Plus size={14} className="mr-1" /> Add
+                                                </Button>
+                                            </div>
+
+                                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                                                {manualAssignments.map((a, i) => (
+                                                    <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-3 relative group">
+                                                        <div className="space-y-2">
+                                                            <Input
+                                                                placeholder="Assignment Name"
+                                                                value={a.name}
+                                                                onChange={(e) => updateManualAssignment(i, 'name', e.target.value)}
+                                                                className="h-8 text-sm"
+                                                                required
+                                                            />
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <Input
+                                                                    type="date"
+                                                                    value={a.due_date}
+                                                                    onChange={(e) => updateManualAssignment(i, 'due_date', e.target.value)}
+                                                                    className="h-8 text-sm"
+                                                                    required
+                                                                />
+                                                                <div className="relative">
+                                                                    <Input
+                                                                        type="number"
+                                                                        placeholder="Hours"
+                                                                        value={a.estimated_hours}
+                                                                        onChange={(e) => updateManualAssignment(i, 'estimated_hours', parseFloat(e.target.value))}
+                                                                        className="h-8 text-sm pr-8"
+                                                                        min="0.5"
+                                                                        step="0.5"
+                                                                    />
+                                                                    <span className="absolute right-2 top-2 text-xs text-muted-foreground">h</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeManualAssignment(i)}>
+                                                            <Trash2 size={12} />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                {manualAssignments.length === 0 && (
+                                                    <div className="text-xs text-muted-foreground text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" onClick={addManualAssignment}>
+                                                        <Plus size={16} className="mx-auto mb-1 opacity-50" />
+                                                        No assignments yet. Click to add.
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>
