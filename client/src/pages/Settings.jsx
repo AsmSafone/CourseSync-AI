@@ -56,6 +56,36 @@ const Settings = () => {
 
     const handleChange = (key, value) => {
         setSettings(prev => ({ ...prev, [key]: value }));
+
+        if (key === 'notifications_enabled' && value === true) {
+            requestNotificationPermission();
+        }
+    }
+
+    const requestNotificationPermission = async () => {
+        if (!("Notification" in window)) {
+            alert("This browser does not support desktop notification");
+            return;
+        }
+
+        if (Notification.permission !== "granted") {
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") {
+                setSettings(prev => ({ ...prev, notifications_enabled: false }));
+                alert("Notification permission denied");
+            }
+        }
+    }
+
+    const testNotification = () => {
+        if (Notification.permission === "granted") {
+            new Notification("Test Notification", {
+                body: "This is how your CourseSync alerts will look!",
+                icon: "/vite.svg"
+            });
+        } else {
+            requestNotificationPermission();
+        }
     }
 
     const handleSave = async (e) => {
@@ -93,10 +123,10 @@ const Settings = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                                CS
+                                S
                             </div>
                             <div>
-                                <h3 className="font-bold text-lg">Course Syncer</h3>
+                                <h3 className="font-bold text-lg">Safone</h3>
                                 <p className="text-sm text-muted-foreground">Premium Student Plan</p>
                                 <div className="mt-2 flex gap-2">
                                     <Badge className="bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400 border-0">Active</Badge>
@@ -138,46 +168,7 @@ const Settings = () => {
                     </div>
                 </SettingSection>
 
-                {/* Notifications */}
-                <SettingSection
-                    icon={Bell}
-                    title="Notification Settings"
-                    description="Configure when and how you want to be notified."
-                >
-                    <div className="space-y-6">
-                        <div className="grid gap-3">
-                            <Label htmlFor="risk" className="text-base font-semibold">Risk Threshold (%)</Label>
-                            <div className="flex items-center gap-4">
-                                <Input
-                                    id="risk"
-                                    type="number"
-                                    value={settings.risk_threshold}
-                                    onChange={e => handleChange('risk_threshold', parseInt(e.target.value))}
-                                    min="1" max="100"
-                                    className="rounded-lg"
-                                />
-                                <span className="text-muted-foreground font-medium">%</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">Trigger alerts for high-weight assignments above this threshold</p>
-                        </div>
 
-                        <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
-                            <Label htmlFor="lead" className="text-base font-semibold">Notification Lead Time</Label>
-                            <div className="flex items-center gap-4 mt-3">
-                                <Input
-                                    id="lead"
-                                    type="number"
-                                    value={settings.notification_lead_days}
-                                    onChange={e => handleChange('notification_lead_days', parseInt(e.target.value))}
-                                    min="1" max="30"
-                                    className="rounded-lg"
-                                />
-                                <span className="text-muted-foreground font-medium">days before</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-2">Get notified this many days before assignment deadlines</p>
-                        </div>
-                    </div>
-                </SettingSection>
 
                 {/* Browser Notifications */}
                 <SettingSection
@@ -194,10 +185,18 @@ const Settings = () => {
                                 </p>
                             </div>
                             <Switch
-                                checked={settings.notifications_enabled !== false}
+                                checked={settings.notifications_enabled}
                                 onCheckedChange={val => handleChange('notifications_enabled', val)}
                             />
                         </div>
+
+                        {settings.notifications_enabled && (
+                            <div className="pt-2">
+                                <Button type="button" variant="outline" size="sm" onClick={testNotification}>
+                                    Send Test Notification
+                                </Button>
+                            </div>
+                        )}
 
                         <div className="grid gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
                             <Label htmlFor="lead-days" className="text-base font-semibold">Alert Me (Days Before Due Date)</Label>
@@ -215,9 +214,25 @@ const Settings = () => {
                             <p className="text-xs text-muted-foreground">Receive notifications this many days before an assignment is due</p>
                         </div>
 
+                        <div className="grid gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <Label htmlFor="risk" className="text-base font-semibold">Risk Threshold (%)</Label>
+                            <div className="flex items-center gap-4">
+                                <Input
+                                    id="risk"
+                                    type="number"
+                                    value={settings.risk_threshold}
+                                    onChange={e => handleChange('risk_threshold', parseInt(e.target.value))}
+                                    min="1" max="100"
+                                    className="rounded-lg"
+                                />
+                                <span className="text-muted-foreground font-medium">%</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Trigger alerts for high-weight assignments above this threshold</p>
+                        </div>
+
                         <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
                             <p className="text-sm font-medium text-blue-900 dark:text-blue-200">💡 Tip</p>
-                            <p className="text-sm text-blue-800 dark:text-blue-300 mt-1">You'll always get notifications for overdue assignments, regardless of this setting</p>
+                            <p className="text-sm text-blue-800 dark:text-blue-300 mt-1">You'll always get notifications for overdue assignments regardless of this setting unless you disable push notifications entirely.</p>
                         </div>
                     </div>
                 </SettingSection>

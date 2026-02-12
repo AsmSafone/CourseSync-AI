@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, Calendar, Settings, Menu, Bell, LogOut, User, X, AlertCircle, Clock, Sparkles } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, Settings, Menu, Bell, LogOut, User, X, AlertCircle, Clock, Sparkles, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ const Layout = ({ children }) => {
         { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/courses', icon: BookOpen, label: 'Courses' },
         { to: '/schedule', icon: Calendar, label: 'Schedule' },
+        { to: '/focus', icon: Target, label: 'Focus Mode' },
         { to: '/assistant', icon: Sparkles, label: 'AI Assistant' },
         { to: '/settings', icon: Settings, label: 'Settings' },
     ];
@@ -75,6 +76,7 @@ const Layout = ({ children }) => {
                             <h1 className="font-extrabold text-2xl tracking-tight leading-none flex">
                                 <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">Course</span>
                                 <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Sync</span>
+                                <span className="bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">AI</span>
                             </h1>
                             <p className="text-[10px] font-bold uppercase tracking-[0.2em] flex gap-1 mt-1">
                                 <span className="text-indigo-500">Smart</span>
@@ -135,7 +137,7 @@ const Layout = ({ children }) => {
                                 whileHover={{ scale: 1.05, backgroundColor: 'rgba(0,0,0,0.05)' }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setShowNotifications(!showNotifications)}
-                                className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all relative group"
+                                className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all relative group"
                             >
                                 <Bell size={20} />
                                 {(overdue + urgent) > 0 && (
@@ -217,13 +219,7 @@ const Layout = ({ children }) => {
                             </AnimatePresence>
                         </div>
 
-                        <motion.button
-                            whileHover={{ scale: 1.05, backgroundColor: 'rgba(0,0,0,0.05)' }}
-                            whileTap={{ scale: 0.95 }}
-                            className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all"
-                        >
-                            <User size={20} />
-                        </motion.button>
+
 
                         {/* Mobile Menu Button */}
                         <Button

@@ -1,6 +1,6 @@
 """Central place for LLM prompts used by the agent."""
 
-SYLLABUS_PARSER_PROMPT = """You are an expert academic syllabus parser. Extract structured information from course syllabi or simple user commands.
+SYLLABUS_PARSER_PROMPT = """You are an expert academic syllabus parser. Extract structured information from course syllabus or simple user commands.
 
 Extract and return ONLY a valid JSON object with this exact structure:
 {
@@ -84,23 +84,33 @@ Return ONLY a valid JSON array:
 AI_ASSISTANT_PROMPT = """You are a helpful academic AI assistant for CourseSync. Your goal is to help students manage their courses and assignments.
 
 You have access to the student's courses and assignments. Use this context to provide helpful, encouraging, and accurate answers.
-You can also perform actions like adding, deleting, or editing courses if the user asks.
+You can also perform actions like adding, deleting, or editing courses and assignments if the user asks.
 
 If the user provides a syllabus text or link, or asks to add/delete/edit a course or assignment, you MUST return a JSON object with the "action" field.
 Otherwise, just answer the question normally.
 
 Response Format (for actions):
 {
-  "action": "add_course" | "delete_course" | "edit_course" | "add_assignment" | "chat",
+  "action": "add_course" | "delete_course" | "edit_course" | "add_assignment" | "delete_assignment" | "update_assignment" | "chat",
   "content": "The response message to show the user",
   "data": {
-    "syllabus_text": "extracted text or url if adding",
+    "syllabus_text": "extracted text or url if adding course",
     "course_name": "exact name if deleting/editing/adding assignment",
+    "assignment_name": "name of assignment to delete/update",
     "assignment": {
         "name": "assignment name",
         "due_date": "YYYY-MM-DD",
         "type": "homework|exam|etc",
-        "estimated_hours": 2
+        "estimated_hours": 2,
+        "weight": 20
+    },
+    "update_data": {
+        "name": "new name (optional)",
+        "due_date": "new date (optional)",
+         "type": "new type (optional)",
+        "estimated_hours": 3,
+        "weight": 20,
+        "progress": 50
     }
   }
 }
@@ -111,7 +121,13 @@ Rules:
 - If the user asks to add an assignment to a course/group, set action to "add_assignment". 
   - Extract the "course_name" (or group name).
   - Extract assignment details into the "assignment" object.
-- If the user asks to edit a course, set action to "edit_course".
+- If the user asks to delete an assignment, set action to "delete_assignment".
+  - Extract "assignment_name" and optionally "course_name".
+- If the user asks to update/edit an assignment (e.g. change progress, date, name), set action to "update_assignment".
+  - Extract "assignment_name" and "course_name".
+  - Extract changed fields into "update_data".
+- If the user asks to edit a course (e.g. rename it), set action to "edit_course".
+    - Extract "course_name" (old name) and putting the new name in "update_data" as "course_name".
 - Be concise but helpful.
 - Use a friendly, encouraging tone.
 - Focus on helping the student stay organized.

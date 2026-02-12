@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getState, updateProgress } from '../services/api';
-import { Calendar as CalIcon, Check, Circle, AlertCircle, Flag, Clock, Flame, TrendingUp, Zap } from 'lucide-react';
+import { getState, updateProgress, exportCalendar } from '../services/api';
+import { Calendar as CalIcon, Check, Circle, AlertCircle, Flag, Clock, Flame, TrendingUp, Zap, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -89,9 +89,11 @@ const Schedule = () => {
     return (
         <div className="space-y-8 pb-10">
             {/* Header */}
-            <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Assignment Schedule</h1>
-                <p className="text-muted-foreground mt-2">Track and manage all your academic deadlines</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Assignment Schedule</h1>
+                    <p className="text-muted-foreground mt-2">Track and manage all your academic deadlines</p>
+                </div>
             </div>
 
             {/* Stats */}
@@ -337,6 +339,14 @@ const Schedule = () => {
                     })}
                 </div>
             )}
+            {/* Mobile Floating Export Button */}
+            <Button
+                onClick={() => window.open(exportCalendar(), '_blank')}
+                className="fixed bottom-20 right-6 z-50 rounded-full h-14 w-14 shadow-xl bg-blue-600 hover:bg-blue-700 text-white"
+                size="icon"
+            >
+                <Download size={24} />
+            </Button>
         </div>
     );
 };

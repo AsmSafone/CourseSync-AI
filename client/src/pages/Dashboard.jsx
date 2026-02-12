@@ -137,7 +137,7 @@ const CourseCard = ({ course, index }) => {
                 <CardContent className="p-5 flex flex-col gap-3">
                     <div>
                         <h3 className="font-bold text-lg leading-tight line-clamp-2 mb-0.5">{course.course_name}</h3>
-                        <p className="text-xs text-muted-foreground font-medium">Professor Name</p>
+                        <p className="text-xs text-muted-foreground font-medium">{course.instructor}</p>
                     </div>
 
                     <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
@@ -235,6 +235,15 @@ const Dashboard = () => {
         return { ...course, progress, assignments: courseAssignments };
     });
 
+    // Calculate dynamic stats
+    const avgProgress = total > 0
+        ? Math.round(assignments.reduce((acc, a) => acc + (a.progress || 0), 0) / total)
+        : 0;
+
+    const hoursTracked = Math.round(
+        assignments.reduce((acc, a) => acc + ((a.estimated_hours || 1) * (a.progress || 0) / 100), 0)
+    );
+
     // Calculate Streak based on completed_at dates
     const getStreakData = () => {
         if (!assignments) return { streak: 0, dates: new Set() };
@@ -309,7 +318,10 @@ const Dashboard = () => {
             {/* Header (now relative so motivation card can be positioned within dashboard only) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Welcome back! 👋</h1>
+                    <h1 className="text-4xl font-bold tracking-tight">
+                        <span className="bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Welcome back!</span>
+                        <span className="ml-2">👋</span>
+                    </h1>
                     <p className="text-muted-foreground mt-2">Here's your learning overview for today</p>
                 </div>
 
@@ -491,11 +503,11 @@ const Dashboard = () => {
                             <div className="grid grid-cols-2 gap-3 pt-2">
                                 <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800">
                                     <p className="text-xs text-muted-foreground font-medium">Avg Completion</p>
-                                    <p className="text-2xl font-bold mt-1">85%</p>
+                                    <p className="text-2xl font-bold mt-1">{avgProgress}%</p>
                                 </div>
                                 <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800">
-                                    <p className="text-xs text-muted-foreground font-medium">Time Saved</p>
-                                    <p className="text-2xl font-bold mt-1">12h</p>
+                                    <p className="text-xs text-muted-foreground font-medium">Est. Hours</p>
+                                    <p className="text-2xl font-bold mt-1">{hoursTracked}h</p>
                                 </div>
                             </div>
                         </CardContent>

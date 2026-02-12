@@ -24,6 +24,7 @@ const Courses = () => {
     const [fileInput, setFileInput] = useState(null);
     const [manualName, setManualName] = useState('');
     const [manualCode, setManualCode] = useState('');
+    const [manualInstructor, setManualInstructor] = useState('');
     const [manualAssignments, setManualAssignments] = useState([]);
 
     // Add Assignment State
@@ -114,6 +115,7 @@ const Courses = () => {
                 res = await addCourseManual({
                     course_name: manualName,
                     course_code: manualCode,
+                    instructor: manualInstructor,
                     semester_start: semesterStart,
                     assignments: manualAssignments
                 });
@@ -127,6 +129,7 @@ const Courses = () => {
 
                 setManualName('');
                 setManualCode('');
+                setManualInstructor('');
                 setManualAssignments([]);
                 // Reload
                 await loadCourses();
@@ -175,7 +178,7 @@ const Courses = () => {
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <Badge variant="secondary" className="text-sm px-3 py-1">{selectedCourse.course_code}</Badge>
-                                <span className="text-sm text-muted-foreground font-medium">Professor Name</span>
+                                <span className="text-sm text-muted-foreground font-medium">{selectedCourse.instructor || "Instructor Not Specified"}</span>
                             </div>
                             <h1 className="text-3xl font-bold tracking-tight">{selectedCourse.course_name}</h1>
                         </div>
@@ -330,7 +333,7 @@ const Courses = () => {
             {/* Header */}
             <div>
                 <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Manage Your Courses</h1>
-                <p className="text-muted-foreground mt-2">Import syllabi to automatically generate and track assignments</p>
+                <p className="text-muted-foreground mt-2">Import syllabus to automatically generate and track assignments</p>
             </div>
 
             {/* Stats */}
@@ -383,9 +386,6 @@ const Courses = () => {
                             <CardTitle className="flex items-center gap-2">
                                 <Plus size={20} className="text-blue-600" /> Add New Course
                             </CardTitle>
-                            <CardDescription>
-                                Import your syllabus to automatically generate assignments.
-                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             {/* Custom Tabs */}
@@ -508,6 +508,15 @@ const Courses = () => {
                                                     value={manualCode}
                                                     onChange={(e) => setManualCode(e.target.value)}
                                                     required
+                                                    className="rounded-lg"
+                                                />
+                                            </div>
+                                            <div className="col-span-2 space-y-2">
+                                                <label className="text-sm font-semibold text-slate-900 dark:text-slate-100">Instructor Name (Optional)</label>
+                                                <Input
+                                                    placeholder="Dr. Smith"
+                                                    value={manualInstructor}
+                                                    onChange={(e) => setManualInstructor(e.target.value)}
                                                     className="rounded-lg"
                                                 />
                                             </div>

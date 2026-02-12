@@ -21,6 +21,7 @@ export const getState = async () => {
 
 export const getSchedule = () => api.get('/api/schedule');
 export const getNotifications = () => api.get('/api/notifications');
+export const exportCalendar = () => `${api.defaults.baseURL}/api/calendar`;
 
 export const updateProgress = (assignment_index, progress) =>
     api.post('/api/progress', { assignment_index, progress });
@@ -49,6 +50,6 @@ export const updateSettings = (settings) => api.post('/api/settings', settings);
 export const deleteCourse = (index) => api.delete(`/api/course/${index}`);
 export const getWorkload = () => api.get('/api/workload');
 
-export const chatWithAI = (question) => api.post('/api/chat', { question });
+export const chatWithAI = (question, history = []) => api.post('/api/chat', { question, history });
 
 export default api;

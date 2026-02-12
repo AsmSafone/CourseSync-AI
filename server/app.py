@@ -104,7 +104,8 @@ class URLRequest(BaseModel):
 
 class ProgressUpdate(BaseModel):
     assignment_index: int
-    progress: int
+    progress: Optional[int] = None
+    time_spent: Optional[float] = None
 
 class SettingsUpdate(BaseModel):
     hours_per_day: Optional[int] = None
@@ -121,17 +122,21 @@ class AssignmentModel(BaseModel):
     type: str = "homework"
     due_date: str
     weight: float = 0
+    weight: float = 0
     estimated_hours: float = 1
+    time_spent: float = 0
     description: Optional[str] = ""
 
 class ManualCourseRequest(BaseModel):
     course_name: str
     course_code: str
+    instructor: Optional[str] = None
     semester_start: str = "2025-09-01"
     assignments: List[AssignmentModel]
 
 class ChatRequest(BaseModel):
     question: str
+    history: Optional[List[Dict[str, str]]] = []
 
 class AddAssignmentRequest(BaseModel):
     course_name: str
@@ -143,7 +148,7 @@ async def chat_with_assistant(request: ChatRequest):
     """Chat with the academic assistant"""
     try:
         logger.info(f"Chat request: {request.question}")
-        result = agent.chat(request.question, state.courses, state.all_assignments)
+        result = agent.chat(request.question, state.courses, state.all_assignments, request.history)
         logger.info(f"Agent response: {result}")
         
         # Helper to format response
@@ -255,7 +260,154 @@ async def chat_with_assistant(request: ChatRequest):
                 return format_response(f"{content}\n(Could not find course '{target}' to delete)")
 
             elif action == "edit_course":
-                 return format_response(f"{content}\n(Editing courses via chat is not fully supported yet. Please delete and re-add.)")
+                course_target = data.get("course_name", "")
+                update_data = data.get("update_data", {})
+                new_name = update_data.get("course_name")
+                new_code = update_data.get("course_code")
+
+                if not course_target:
+                     return format_response(f"{content}\n(Missing course name to edit)")
+                
+                target_lower = course_target.lower()
+                found = False
+                
+                for course in state.courses:
+                    if target_lower in course.get("course_name", "").lower() or target_lower in course.get("course_code", "").lower():
+                        found = True
+                        
+                        if new_name:
+                            old_name = course.get("course_name")
+                            course["course_name"] = new_name
+                            # Update assignments
+                            for a in state.all_assignments:
+                                if a.get("course") == old_name:
+                                    a["course"] = new_name
+                            for a in course.get("assignments", []):
+                                a["course"] = new_name
+                        
+                        if new_code:
+                            course["course_code"] = new_code
+                            # Update assignments
+                            for a in state.all_assignments:
+                                if a.get("course") == course.get("course_name"):
+                                     a["course_code"] = new_code
+                            for a in course.get("assignments", []):
+                                a["course_code"] = new_code
+
+                        state.persist()
+                        return format_response(f"{content}\n\n✏️ Updated course: {course.get('course_name')}")
+                
+                return format_response(f"{content}\n(Course '{course_target}' not found)")
+
+            elif action == "delete_assignment":
+                 assignment_name = data.get("assignment_name", "")
+                 course_name = data.get("course_name", "")
+                 
+                 if not assignment_name:
+                      return format_response(f"{content}\n(Missing assignment name)")
+
+                 target_a = assignment_name.lower()
+                 target_c = course_name.lower() if course_name else ""
+
+                 deleted_count = 0
+                 
+                 # Remove from all_assignments
+                 new_all_assignments = []
+                 for a in state.all_assignments:
+                     a_name = a.get("name", "").lower()
+                     a_course = a.get("course", "").lower()
+                     
+                     match_name = target_a in a_name
+                     match_course = True
+                     if target_c:
+                         match_course = target_c in a_course
+                     
+                     if match_name and match_course:
+                         deleted_count += 1
+                     else:
+                         new_all_assignments.append(a)
+                 
+                 state.all_assignments = new_all_assignments
+
+                 # Remove from courses
+                 for course in state.courses:
+                     c_assignments = course.get("assignments", [])
+                     new_c_assignments = []
+                     for a in c_assignments:
+                         a_name = a.get("name", "").lower()
+                         match_name = target_a in a_name
+                         match_course = True
+                         if target_c:
+                             if target_c not in course.get("course_name", "").lower():
+                                 match_course = False
+                         
+                         if match_name and match_course:
+                             pass 
+                         else:
+                             new_c_assignments.append(a)
+                     course["assignments"] = new_c_assignments
+
+                 if deleted_count > 0:
+                     state.persist()
+                     return format_response(f"{content}\n\n🗑️ Deleted assignment: {assignment_name}")
+                 else:
+                     return format_response(f"{content}\n(Assignment '{assignment_name}' not found)")
+
+            elif action == "update_assignment":
+                course_target = data.get("course_name", "")
+                assignment_target = data.get("assignment_name", "")
+                update_data = data.get("update_data", {})
+                
+                if not assignment_target:
+                    return format_response(f"{content}\n(Missing assignment name)")
+
+                target_a = assignment_target.lower()
+                target_c = course_target.lower() if course_target else ""
+                
+                updated_count = 0
+                
+                # Helper to update fields
+                def update_fields(a):
+                    changed = False
+                    for k, v in update_data.items():
+                        if v is not None and k in ["name", "due_date", "type", "description", "estimated_hours", "weight", "progress"]:
+                            a[k] = v
+                            changed = True
+                    return changed
+
+                # Update in all_assignments
+                for a in state.all_assignments:
+                    a_name = a.get("name", "").lower()
+                    a_course = a.get("course", "").lower()
+                    
+                    match_name = target_a in a_name
+                    match_course = True
+                    if target_c:
+                         match_course = target_c in a_course
+                    
+                    if match_name and match_course:
+                        if update_fields(a):
+                            updated_count += 1
+
+                # Update in courses
+                for course in state.courses:
+                     c_assignments = course.get("assignments", [])
+                     for a in c_assignments:
+                         a_name = a.get("name", "").lower()
+                         match_name = target_a in a_name
+                         match_course = True
+                         if target_c:
+                             if target_c not in course.get("course_name", "").lower():
+                                 match_course = False
+                         
+                         if match_name and match_course:
+                             update_fields(a)
+                
+                if updated_count > 0:
+                    state.persist()
+                    return format_response(f"{content}\n\n✅ Updated assignment: {assignment_target}")
+                else:
+                    return format_response(f"{content}\n(Assignment '{assignment_target}' not found)")
             
             else:
                  return format_response(content)
@@ -414,7 +566,9 @@ async def add_course_manual(request: ManualCourseRequest):
                  "type": a.type,
                  "due_date": a.due_date,
                  "weight": a.weight,
+                 "weight": a.weight,
                  "estimated_hours": a.estimated_hours,
+                 "time_spent": 0,
                  "description": a.description if a.description else "",
                  "course": request.course_name,
                  "course_code": request.course_code,
@@ -424,6 +578,7 @@ async def add_course_manual(request: ManualCourseRequest):
         course_data = {
             "course_name": request.course_name,
             "course_code": request.course_code,
+            "instructor": request.instructor,
             "assignments": assignments
         }
         
@@ -555,7 +710,9 @@ async def add_assignment(request: AddAssignmentRequest):
             "type": a.type,
             "due_date": a.due_date,
             "weight": a.weight,
+            "weight": a.weight,
             "estimated_hours": a.estimated_hours,
+            "time_spent": 0,
             "description": a.description,
             "course": target_course.get("course_name"),
             "course_code": target_course.get("course_code"),
@@ -578,17 +735,22 @@ async def update_progress(update: ProgressUpdate):
     try:
         if 0 <= update.assignment_index < len(state.all_assignments):
             assignment = state.all_assignments[update.assignment_index]
-            old_progress = assignment.get("progress", 0)
-            new_progress = max(0, min(100, update.progress))
             
-            assignment["progress"] = new_progress
-            
-            # Update completed_at timestamp
-            if new_progress == 100 and old_progress < 100:
-                assignment["completed_at"] = datetime.now().isoformat()
-            elif new_progress < 100:
-                # Remove completion timestamp if getting un-completed
-                assignment.pop("completed_at", None)
+            if update.progress is not None:
+                old_progress = assignment.get("progress", 0)
+                new_progress = max(0, min(100, update.progress))
+                assignment["progress"] = new_progress
+                
+                # Update completed_at timestamp
+                if new_progress == 100 and old_progress < 100:
+                    assignment["completed_at"] = datetime.now().isoformat()
+                elif new_progress < 100:
+                    # Remove completion timestamp if getting un-completed
+                    assignment.pop("completed_at", None)
+
+            if update.time_spent is not None:
+                current_time = assignment.get("time_spent", 0)
+                assignment["time_spent"] = current_time + update.time_spent
                 
             state.persist()
             return {"success": True}

@@ -1,6 +1,6 @@
-# CourseSync-Agent
+# CourseSync-AI
 
-An intelligent academic course management Web Application powered by Groq LLM for syllabus parsing, workload analysis, and smart scheduling.
+An intelligent academic course management Web Application powered by LLM for syllabus parsing, workload analysis, and smart scheduling.
 
 ## Problem Statement
 
@@ -12,20 +12,20 @@ The academic course management landscape faces several critical challenges:
 4. **Study Planning**: Lack of optimized study schedules that account for workload distribution
 5. **Proactive Notifications**: Missing timely reminders and strategic study recommendations
 
-CourseSync-Agent addresses these challenges through an intelligent multi-agent system that automates course data synchronization, validation, and management via a beautiful, modern web interface.
+CourseSync-AI redefines academic management through a **multi-agent system** where specialized AI agents collaborate to handle complex tasks. Unlike traditional tools, it doesn't just store data—it actively perceives, plans, and acts to optimize your academic life.
 
 ## System Architecture
 ![System Architecture Diagram](diagram.png)
 
 ## System Design & Reasoning Flow
 
-### Core Components
+### The Agency of CourseSync
+The system is composed of specialized agents working in concert:
 
-1. **CourseSyncAgent**
-   - Syllabus Parser: Extracts structured data from course syllabi
-   - Workload Analyzer: Identifies workload distribution and risk periods
-   - Schedule Optimizer: Creates personalized study schedules
-   - Notification Generator: Provides strategic alerts and reminders
+1.  **Syllabus Parsing Agent**: Autonomously reads and structures complex course documents.
+2.  **Workload Analysis Agent**: Proactively identifies stress points and visualizes risk.
+3.  **Scheduling Agent**: Intellectually plans your days based on priorities and energy levels.
+4.  **Assistant Agent**: A conversational partner that executes commands and answers queries.
 
 2. **Technology Stack**
    - **Language Models**:
@@ -36,10 +36,11 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
      - SMTP (configurable via environment) for email notifications
    
    - **Web Framework**:
-     - FastAPI for robust backend API
-     - Modern responsive web UI with beautiful design
-     - Real-time updates and interactive visualizations
-     - Smooth animations and engaging user experience
+     - **Backend**: FastAPI for robust REST API
+     - **Frontend**: React + Vite for high-performance UI
+     - **Styling**: TailwindCSS with Framer Motion for animations
+     - **Visualization**: Recharts for interactive analytics
+     - **Icons**: Lucide React for modern iconography
 
 3. **Data Structures**
    - Course information (name, code, instructor)
@@ -74,11 +75,13 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
 
 ## Features
 
-- 🎓 **Course Management**: Add courses via text, PDF, or URL scraping
+- 🤖 **Agentic Chat Assistant**: Command your personal AI to manage courses, upload files, and answer queries naturally.
+- 🎓 **Autonomous Import**: Drag-and-drop a PDF, and watch the agent extract every deadline instantly.
 - 📋 **Assignment Tracking**: Track progress with visual progress bars
 - 📊 **Workload Analysis**: Visual breakdown of weekly hours and risk periods
 - 📅 **Smart Scheduling**: AI-generated personalized study schedules
 - 🔔 **Smart Notifications**: Strategic reminders and deadline alerts
+- 🎯 **Focus Mode**: Pomodoro-style timer with task tracking and detailed insights
 - 📆 **Calendar Export**: Export assignments to .ics format
 - ⚙️ **Customizable Settings**: Configure study hours, risk thresholds, and notifications
 - 📱 **Responsive Design**: Works beautifully on desktop, tablet, and mobile
@@ -88,9 +91,9 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
 ### Current Limitations
 
 1. **Input Constraints**
-   - Manual syllabus text entry required
-   - Limited web scraping capabilities
-   - Fixed study hour estimations
+   - PDF parsing depends on file layout clarity
+   - Web scraping limited to publicly accessible pages
+   - Initial study hour estimates are generalized averages
 
 2. **Technical Constraints**
    - Groq API dependency
@@ -105,10 +108,10 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
 ### Future Work
 
 1. **Enhanced Capabilities**
-   - Calendar integration via APIs (Google Calendar)
-   - Dynamic study hour estimation
-   - Advanced analytics and insights
-   - Mobile companion app
+   - Calendar integration via APIs (Google Calendar, Outlook)
+   - Dynamic study hour estimation based on historical performance
+   - Predictive analytics for grade outcomes
+   - Native Mobile App (iOS/Android) with push notifications
 
 2. **Technical Improvements**
    - Multi-LLM provider support
@@ -135,11 +138,20 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/AsmSafone/CourseSync-Agent.git
-   cd CourseSync-Agent
+   git clone https://github.com/AsmSafone/CourseSync-AI.git
+   cd CourseSync-AI
    ```
 
-2. **Create and activate virtual environment**
+2. **Setup Frontend (Required)**
+   ```bash
+   cd client
+   npm install
+   npm run build
+   cd ..
+   ```
+   *Note: This builds the React frontend to be served by the Python backend.*
+
+3. **Create and activate virtual environment**
    ```bash
    # Windows
    python -m venv venv
@@ -150,12 +162,12 @@ CourseSync-Agent addresses these challenges through an intelligent multi-agent s
    source venv/bin/activate
    ```
 
-3. **Install dependencies**
+4. **Install backend dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configuration**
+5. **Configuration**
    
    Create a `.env` file in the project root:
    ```env
@@ -195,48 +207,43 @@ http://localhost:8000
 
 ## Usage Guide
 
-### Adding Courses
+### Dashboard
+- **Overview**: View a summary of your academic progress
+- **Notifications**: Check the bell icon for strategic reminders and deadline alerts
+- **Widgets**: Track total, completed, and pending assignments
 
+### Courses
 1. Navigate to the **Courses** page
-2. Click **Add Course** button
-3. Choose your input method:
+2. **Add Course**:
    - **Text**: Paste syllabus content directly
    - **URL**: Provide a course webpage URL for automatic scraping
    - **PDF**: Upload a PDF file containing the syllabus
-4. Enter the semester start date
-5. The AI will automatically parse and extract all assignments
+   - **Manual Entry**: Manually enter course details and assignments
+3. **Manage Assignments**:
+   - Click on a course to view detailed assignment lists
+   - Add new assignments manually
+   - Track progress and mark tasks as complete
 
-### Managing Assignments
-
-- View all assignments on the **Assignments** page
-- Filter by: All, Upcoming, Completed, or In Progress
-- Update progress using the progress bar or input field
-- Track due dates and estimated hours
-
-### Analyzing Workload
-
-1. Go to the **Workload** page
-2. Click **Analyze** to generate workload analysis
-3. View:
-   - Total study hours
-   - Weekly breakdown with visual charts
-   - Risk periods identification
-   - Personalized recommendations
-
-### Generating Study Schedule
-
+### Schedule
 1. Navigate to the **Schedule** page
-2. Set your preferred study hours per day
-3. Click **Generate** to create a personalized schedule
-4. View daily tasks with priorities and time allocations
-5. Review warnings and recommendations
+2. View your personalized study plan sorted by urgency
+3. Filter assignments by **Pending**, **Overdue**, or **Completed**
+4. visual indicators for deadlines and priorities
 
-### Smart Notifications
+### Focus Mode
 
-- Visit the **Notifications** page
-- Click **Refresh** to generate smart notifications
-- View strategic reminders, deadline alerts, and study recommendations
-- Enable email notifications in Settings for automatic delivery
+- Navigate to **Focus Mode** to start a study session
+- **Timer**: Use the built-in Pomodoro timer (25m Focus, 5m Short Break, 15m Long Break)
+- **Task Tracking**: Select a specific assignment to log time against
+- **Insights**: Track sessions completed, minutes focused, and total hours per assignment
+- **Persistence**: Timer state is saved automatically, so you can reload without losing progress
+
+### AI Assistant
+
+- Navigate to the **AI Assistant** page
+- **Chat**: Ask questions about your schedule (e.g., "What's due this week?", "How is my progress?")
+- **Actions**: The Assistant can add, edit, or delete courses and assignments based on your commands
+- **Upload**: You can also upload syllabus files directly in the chat for processing
 
 ### Settings
 

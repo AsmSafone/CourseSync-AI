@@ -6,17 +6,29 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { chatWithAI, addSyllabusFile } from '../services/api';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
 
 const AIAssistant = () => {
-    const [messages, setMessages] = useState([
-        { id: 1, role: 'assistant', content: "Hello! I'm your CourseSync AI assistant. Ask me anything about your courses, assignments, or study schedule! You can also upload a syllabus (PDF, TXT, MD) or paste a link to add a course." }
-    ]);
+    const [messages, setMessages] = useState(() => {
+        const saved = localStorage.getItem('chat_history');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to parse chat history", e);
+            }
+        }
+        return [
+            { id: 1, role: 'assistant', content: "Hello! I'm your CourseSync AI assistant. Ask me anything about your courses, assignments, or study schedule! You can also upload a syllabus (PDF, TXT, MD) or paste a link to add a course." }
+        ];
+    });
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef(null);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
+        localStorage.setItem('chat_history', JSON.stringify(messages));
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
@@ -32,7 +44,9 @@ const AIAssistant = () => {
         setLoading(true);
 
         try {
-            const res = await chatWithAI(input);
+            // Send history for context (exclude the message just added which is 'input')
+            const history = messages.map(m => ({ role: m.role, content: m.content }));
+            const res = await chatWithAI(input, history);
             if (res.data && res.data.success) {
                 setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: res.data.response }]);
             } else {
@@ -82,7 +96,8 @@ const AIAssistant = () => {
     };
 
     const clearChat = () => {
-        setMessages([{ id: Date.now(), role: 'assistant', content: "Chat cleared. How can I help you now?" }]);
+        setMessages([{ id: 1, role: 'assistant', content: "Hello! I'm your CourseSync AI assistant. Ask me anything about your courses, assignments, or study schedule! You can also upload a syllabus (PDF, TXT, MD) or paste a link to add a course." }]);
+        localStorage.removeItem('chat_history');
     };
 
     const suggestedQuestions = [
@@ -140,7 +155,14 @@ const AIAssistant = () => {
                                         ? "bg-slate-50 dark:bg-slate-800/50 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-100 dark:border-slate-800"
                                         : "bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-500/20"
                                 )}>
-                                    {msg.content}
+                                    <ReactMarkdown
+                                        className="prose dark:prose-invert prose-sm max-w-none break-words [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4"
+                                        components={{
+                                            a: ({ node, ...props }) => <a {...props} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer" />,
+                                        }}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
                                 </div>
                             </motion.div>
                         ))}

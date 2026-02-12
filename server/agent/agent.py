@@ -102,9 +102,18 @@ Extract all assignments in JSON format."""
         result = extract_json(response)
         return result if isinstance(result, list) else result.get("notifications", [])
 
-    def chat(self, question: str, courses: List[Dict], assignments: List[Dict]) -> Dict:
+    def chat(self, question: str, courses: List[Dict], assignments: List[Dict], history: List[Dict] = []) -> Dict:
         """Answer student questions about their courses"""
+        
+        # Format history string
+        history_str = ""
+        if history:
+            history_str = "\n".join([f"{msg.get('role', 'user')}: {msg.get('content', '')}" for msg in history[-10:]]) # Limit history
+
         user_prompt = f"""Student Question: {question}
+
+        Chat History:
+        {history_str}
 
         Context:
         Courses: {json.dumps(courses, indent=2)}
